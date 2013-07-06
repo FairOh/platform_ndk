@@ -29,7 +29,8 @@ LIBPORTABLE_SUBDIR=sources/android/libportable
 TOOLCHAIN_GIT_DATE=now
 
 # The space-separated list of all GCC versions we support in this NDK
-DEFAULT_GCC_VERSION_LIST="4.6 4.7 4.4.3"
+DEFAULT_GCC_VERSION_LIST="4.6 4.7 4.8"
+
 
 # The default GCC version for this NDK, i.e. the first item in
 # $DEFAULT_GCC_VERSION_LIST
@@ -163,7 +164,7 @@ get_default_toolchain_prefix_for_arch ()
 
 # Get the list of all toolchain names for a given architecture
 # $1: architecture (e.g. 'arm')
-# Out: list of toolchain names for this arch (e.g. arm-linux-androideabi-4.6 arm-linux-androideabi-4.4.3)
+# Out: list of toolchain names for this arch (e.g. arm-linux-androideabi-4.6 arm-linux-androideabi-4.7)
 # Return empty for unknown arch
 get_toolchain_name_list_for_arch ()
 {
