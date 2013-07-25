@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 
-# this file is used to prepare the NDK to build with the mipsel llvm-3.2
+# this file is used to prepare the NDK to build with the mipsel llvm-3.3
 # toolchain any number of source files
 #
 # its purpose is to define (or re-define) templates used to build
@@ -27,15 +27,13 @@
 # Override the toolchain prefix
 #
 
-LLVM_VERSION := 3.2
+LLVM_VERSION := 3.3
 LLVM_NAME := llvm-$(LLVM_VERSION)
 LLVM_TOOLCHAIN_ROOT := $(NDK_ROOT)/toolchains/$(LLVM_NAME)
 LLVM_TOOLCHAIN_PREBUILT_ROOT := $(call host-prebuilt-tag,$(LLVM_TOOLCHAIN_ROOT))
 LLVM_TOOLCHAIN_PREFIX := $(LLVM_TOOLCHAIN_PREBUILT_ROOT)/bin/
 
-
 TOOLCHAIN_VERSION := 4.8
-
 TOOLCHAIN_NAME := mipsel-linux-android-$(TOOLCHAIN_VERSION)
 TOOLCHAIN_ROOT := $(NDK_ROOT)/toolchains/$(TOOLCHAIN_NAME)
 TOOLCHAIN_PREBUILT_ROOT := $(call host-prebuilt-tag,$(TOOLCHAIN_ROOT))
