@@ -1130,8 +1130,24 @@ find_ndk_archs ()
 # Return: arch names not in ndk default archs
 find_ndk_unknown_archs()
 {
-  local FOUND_ARCHS=$(find_ndk_archs)
-  echo "$(filter_out "$DEFAULT_ARCHS" "$FOUND_ARCHS")"
+    local FOUND_ARCHS=$(find_ndk_archs)
+    # TODO: x86_64 is here just to be found as known arch.
+    # It can be removed as soon as it is added into $DEFAULT_ARCHS
+    echo "$(filter_out "$DEFAULT_ARCHS x86_64" "$FOUND_ARCHS")"
+}
+
+# Determine whether given arch is in unknown archs list
+# $1: arch
+# Return: yes or no
+arch_in_unknown_archs()
+{
+    local UNKNOWN_ARCH=$(find_ndk_unknown_archs | grep $1)
+    if [ -z $UNKNOWN_ARCH ]; then
+        echo "no"
+    else
+        echo "yes"
+    fi
+
 }
 
 # Convert an ABI name into an Architecture name
