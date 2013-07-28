@@ -27,7 +27,7 @@
 //
 // si_class_type_info.cc: Methods for __si_class_type_info.
 
-#include <cxxabi.h>
+#include "cxxabi_defines.h"
 
 namespace __cxxabiv1
 {

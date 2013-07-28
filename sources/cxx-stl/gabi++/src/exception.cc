@@ -33,6 +33,7 @@
 namespace std {
 
 #if !defined(GABIXX_LIBCXX)
+<<<<<<< HEAD
 exception::exception() _GABIXX_NOEXCEPT {
 }
 #endif // !defined(GABIXX_LIBCXX)
@@ -41,10 +42,21 @@ exception::~exception() _GABIXX_NOEXCEPT {
 }
 
 const char* exception::what() const _GABIXX_NOEXCEPT {
+=======
+exception::exception() throw() {
+}
+#endif // !defined(GABIXX_LIBCXX)
+
+exception::~exception() throw() {
+}
+
+const char* exception::what() const throw() {
+>>>>>>> 7a9c376... gabi++: Fix terminate / unexpected thread-safety.
   return "std::exception";
 }
 
 #if !defined(GABIXX_LIBCXX)
+<<<<<<< HEAD
 bad_exception::bad_exception() _GABIXX_NOEXCEPT {
 }
 
@@ -52,10 +64,20 @@ bad_exception::~bad_exception() _GABIXX_NOEXCEPT {
 }
 
 const char* bad_exception::what() const _GABIXX_NOEXCEPT {
+=======
+bad_exception::bad_exception() throw() {
+}
+
+bad_exception::~bad_exception() throw() {
+}
+
+const char* bad_exception::what() const throw() {
+>>>>>>> 7a9c376... gabi++: Fix terminate / unexpected thread-safety.
   return "std::bad_exception";
 }
 #endif // !defined(GABIXX_LIBCXX)
 
+<<<<<<< HEAD
 bad_cast::bad_cast() _GABIXX_NOEXCEPT {
 }
 
@@ -77,6 +99,29 @@ const char* bad_typeid::what() const _GABIXX_NOEXCEPT {
 }
 
 bool uncaught_exception() _GABIXX_NOEXCEPT {
+=======
+bad_cast::bad_cast() throw() {
+}
+
+bad_cast::~bad_cast() throw() {
+}
+
+const char* bad_cast::what() const throw() {
+  return "std::bad_cast";
+}
+
+bad_typeid::bad_typeid() throw() {
+}
+
+bad_typeid::~bad_typeid() throw() {
+}
+
+const char* bad_typeid::what() const throw() {
+  return "std::bad_typeid";
+}
+
+bool uncaught_exception() throw() {
+>>>>>>> 7a9c376... gabi++: Fix terminate / unexpected thread-safety.
   using namespace __cxxabiv1;
 
   __cxa_eh_globals* globals = __cxa_get_globals();

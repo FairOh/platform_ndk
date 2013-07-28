@@ -46,6 +46,7 @@
 #  define _GABIXX_NOEXCEPT_(x) /* nothing */
 #endif
 
+<<<<<<< HEAD
 // Use _GABIXX_HIDDEN to declare internal functions of GAbi++ that should
 // never be exposed to client code.
 #define _GABIXX_HIDDEN  __attribute__((__visibility__("hidden")))
@@ -53,6 +54,8 @@
 // Use _GABIXX_WEAK to define a symbol with weak linkage.
 #define _GABIXX_WEAK  __attribute__((__weak__))
 
+=======
+>>>>>>> 7a9c376... gabi++: Fix terminate / unexpected thread-safety.
 // Use _GABIXX_ALWAYS_INLINE to declare a function that shall always be
 // inlined. Note that the always_inline doesn't make a function inline
 // per se.

@@ -28,10 +28,10 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
-#include <cxxabi.h>
 #include <exception>
 #include <pthread.h>
 
+#include "cxxabi_defines.h"
 #include "helper_func_internal.h"
 
 namespace {
@@ -50,7 +50,7 @@ namespace {
 
   // Technical note:
   // Use a pthread_key_t to hold the key used to store our thread-specific
-  // __cxa_thread_info objects. The key is created and destroyed through
+  // __cxa_eh_globals objects. The key is created and destroyed through
   // a static C++ object.
   //
 
@@ -67,7 +67,7 @@ namespace {
     // is loaded through dlopen().
     CxaThreadKey() {
       if (pthread_key_create(&__cxa_thread_key, freeObject) != 0) {
-        fatalError("Can't allocate C++ runtime pthread_key_t");
+        __gabixx::__fatal_error("Can't allocate C++ runtime pthread_key_t");
       }
     }
 
@@ -77,28 +77,26 @@ namespace {
       pthread_key_delete(__cxa_thread_key);
     }
 
-    static __cxa_thread_info* getFast() {
+    static __cxa_eh_globals* getFast() {
       void* obj = pthread_getspecific(__cxa_thread_key);
-      return reinterpret_cast<__cxa_thread_info*>(obj);
+      return reinterpret_cast<__cxa_eh_globals*>(obj);
     }
 
-    static __cxa_thread_info* getSlow() {
+    static __cxa_eh_globals* getSlow() {
       void* obj = pthread_getspecific(__cxa_thread_key);
       if (obj == NULL) {
-        obj = malloc(sizeof(__cxa_thread_info));
+        obj = malloc(sizeof(__cxa_eh_globals));
         if (!obj) {
           // Shouldn't happen, but better be safe than sorry.
-<<<<<<< HEAD
-          fatalError("Can't allocate thread-specific C++ runtime info block.");
-=======
           __gabixx::__fatal_error(
               "Can't allocate thread-specific C++ runtime info block.");
->>>>>>> ce2be28... gabi++: Introduced _GABIXX_HIDDEN macro.
+          __gabixx::__fatal_error("Can't allocate thread-specific C++ runtime info block.");
+
         }
-        memset(obj, 0, sizeof(__cxa_thread_info));
+        memset(obj, 0, sizeof(__cxa_eh_globals));
         pthread_setspecific(__cxa_thread_key, obj);
       }
-      return reinterpret_cast<__cxa_thread_info*>(obj);
+      return reinterpret_cast<__cxa_eh_globals*>(obj);
     }
 
   private:
@@ -115,16 +113,10 @@ namespace {
   static CxaThreadKey instance;
 
   void throwException(__cxa_exception *header) {
-    __cxa_thread_info *info = CxaThreadKey::getSlow();
-    header->unexpectedHandler = info->unexpectedHandler;
-    if (!header->unexpectedHandler) {
-      header->unexpectedHandler = std::get_unexpected();
-    }
-    header->terminateHandler = info->terminateHandler;
-    if (!header->terminateHandler) {
-      header->terminateHandler = std::get_terminate();
-    }
-    info->globals.uncaughtExceptions += 1;
+    __cxa_eh_globals* globals = __cxa_get_globals();
+    header->unexpectedHandler = std::get_unexpected();
+    header->terminateHandler = std::get_terminate();
+    globals->uncaughtExceptions += 1;
 
     _Unwind_Reason_Code ret = _Unwind_RaiseException(&header->unwindHeader);
 
@@ -140,17 +132,15 @@ namespace __cxxabiv1 {
   }
 
   extern "C" void __cxa_pure_virtual() {
-    fatalError("Pure virtual function called!");
+    __gabixx::__fatal_error("Pure virtual function called!");
   }
 
   extern "C" __cxa_eh_globals* __cxa_get_globals() {
-    __cxa_thread_info* info = CxaThreadKey::getSlow();
-    return &info->globals;
+    return CxaThreadKey::getSlow();
   }
 
   extern "C" __cxa_eh_globals* __cxa_get_globals_fast() {
-    __cxa_thread_info* info = CxaThreadKey::getFast();
-    return &info->globals;
+    return CxaThreadKey::getFast();
   }
 
 
@@ -161,7 +151,7 @@ namespace __cxxabiv1 {
       // Since Android uses memory-overcommit, we enter here only when
       // the exception object is VERY large. This will propably never happen.
       // Therefore, we decide to use no emergency spaces.
-      fatalError("Not enough memory to allocate exception!");
+      __gabixx::__fatal_error("Not enough memory to allocate exception!");
     }
 
     memset(buffer, 0, sizeof(__cxa_exception));
@@ -175,7 +165,7 @@ namespace __cxxabiv1 {
       try {
         exc->exceptionDestructor(thrown_exception);
       } catch (...) {
-        fatalError("Exception destructor has thrown!");
+        __gabixx::__fatal_error("Exception destructor has thrown!");
       }
     }
 
@@ -201,7 +191,8 @@ namespace __cxxabiv1 {
     __cxa_exception* header = globals->caughtExceptions;
     _Unwind_Exception* exception = &header->unwindHeader;
     if (!header) {
-      fatalError("Attempting to rethrow an exception that doesn't exist!");
+      __gabixx::__fatal_error(
+          "Attempting to rethrow an exception that doesn't exist!");
     }
 
     if (isOurCxxException(exception->exception_class)) {
@@ -221,7 +212,7 @@ namespace __cxxabiv1 {
 
     if (!isOurCxxException(exception->exception_class)) {
       if (globals->caughtExceptions) {
-        fatalError("Can't handle non-C++ exception!");
+        __gabixx::__fatal_error("Can't handle non-C++ exception!");
       }
     }
 
@@ -263,7 +254,7 @@ namespace __cxxabiv1 {
       __cxa_free_exception(header+1);
       return;
     } else if (count < 0) {
-      fatalError("Internal error during exception handling!");
+      __gabixx::__fatal_error("Internal error during exception handling!");
     }
 
     header->handlerCount = count;

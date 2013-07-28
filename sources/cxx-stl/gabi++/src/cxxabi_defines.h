@@ -317,6 +317,7 @@ struct __cxa_eh_globals {
 namespace __gabixx {
 
 // Default terminate handler.
+<<<<<<< HEAD
 _GABIXX_NORETURN void __default_terminate(void) _GABIXX_HIDDEN;
 
 // Call |handler| and if it returns, call __default_terminate.
@@ -326,6 +327,16 @@ _GABIXX_NORETURN void __terminate(std::terminate_handler handler)
 // Print a fatal error message to the log+stderr, then call
 // std::terminate().
 _GABIXX_NORETURN void __fatal_error(const char* message) _GABIXX_HIDDEN;
+=======
+_GABIXX_NORETURN void __default_terminate(void);
+
+// Call |handler| and if it returns, call __default_terminate.
+_GABIXX_NORETURN void __terminate(std::terminate_handler handler);
+
+// Print a fatal error message to the log+stderr, then call
+// std::terminate().
+_GABIXX_NORETURN void __fatal_error(const char* message);
+>>>>>>> 7a9c376... gabi++: Fix terminate / unexpected thread-safety.
 
 }  // __gabixx
 
