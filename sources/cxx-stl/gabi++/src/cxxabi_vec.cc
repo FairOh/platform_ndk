@@ -28,8 +28,14 @@
 #include <cstddef>
 #include <new>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 #include "cxxabi_defines.h"
+=======
+#include <cxxabi.h>
+
+#include "helper_func_internal.h"
+>>>>>>> 961738e... gabi++: Implement missing array helper functions.
 =======
 #include <cxxabi.h>
 
@@ -99,7 +105,11 @@ private:
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Helper class that calls __fatal_error() with a given message if
+=======
+// Helper class that calls fatalError() with a given message if
+>>>>>>> 961738e... gabi++: Implement missing array helper functions.
 =======
 // Helper class that calls fatalError() with a given message if
 >>>>>>> 961738e... gabi++: Implement missing array helper functions.
@@ -111,7 +121,11 @@ public:
   ~scoped_catcher() {
     if (message_)
 <<<<<<< HEAD
+<<<<<<< HEAD
       __gabixx::__fatal_error(message_);
+=======
+      __cxxabiv1::fatalError(message_);
+>>>>>>> 961738e... gabi++: Implement missing array helper functions.
 =======
       __cxxabiv1::fatalError(message_);
 >>>>>>> 961738e... gabi++: Implement missing array helper functions.
