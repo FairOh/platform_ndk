@@ -1,4 +1,4 @@
-// Copyright (C) 2011 The Android Open Source Project
+// Copyright (C) 2012 The Android Open Source Project
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -24,74 +24,63 @@
 // LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 // OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 // SUCH DAMAGE.
-//
 
-#include <gabixx_config.h>
-#include <stdlib.h>
-#include <new>
+#include <exception>
+#include <typeinfo>
 
-using std::new_handler;
-namespace {
-  new_handler cur_handler;
-}
+#include "cxxabi_defines.h"
 
 namespace std {
 
 #if !defined(GABIXX_LIBCXX)
-  const nothrow_t nothrow = {};
-#endif  // !defined(GABIXX_LIBCXX)
+exception::exception() _GABIXX_NOEXCEPT {
+}
+#endif // !defined(GABIXX_LIBCXX)
 
-  bad_alloc::bad_alloc() _GABIXX_NOEXCEPT {
-  }
-
-  bad_alloc::~bad_alloc() _GABIXX_NOEXCEPT {
-  }
-
-  const char* bad_alloc::what() const _GABIXX_NOEXCEPT {
-    return "std::bad_alloc";
-  }
-
-  new_handler set_new_handler(new_handler next_handler) _GABIXX_NOEXCEPT {
-    new_handler old_handler = cur_handler;
-    cur_handler = next_handler;
-    return old_handler;
-  }
-
-} // namespace std
-
-_GABIXX_WEAK
-void* operator new(std::size_t size) throw(std::bad_alloc) {
-  void* space;
-  do {
-    space = malloc(size);
-    if (space) {
-      return space;
-    }
-    new_handler handler = cur_handler;
-    if (handler == NULL) {
-      throw std::bad_alloc();
-    }
-    handler();
-  } while (space == 0);
+exception::~exception() _GABIXX_NOEXCEPT {
 }
 
-_GABIXX_WEAK
-void* operator new(std::size_t size, const std::nothrow_t& no)
-    _GABIXX_NOEXCEPT {
-  try {
-    ::operator new(size);
-  } catch (const std::bad_alloc&) {
-    return 0;
-  }
+const char* exception::what() const _GABIXX_NOEXCEPT {
+  return "std::exception";
 }
 
-_GABIXX_WEAK
-void* operator new[](std::size_t size) throw(std::bad_alloc) {
-  return ::operator new(size);
+#if !defined(GABIXX_LIBCXX)
+bad_exception::bad_exception() _GABIXX_NOEXCEPT {
 }
 
-_GABIXX_WEAK
-void* operator new[](std::size_t size, const std::nothrow_t& no)
-    _GABIXX_NOEXCEPT {
-  return ::operator new(size, no);
+bad_exception::~bad_exception() _GABIXX_NOEXCEPT {
 }
+
+const char* bad_exception::what() const _GABIXX_NOEXCEPT {
+  return "std::bad_exception";
+}
+#endif // !defined(GABIXX_LIBCXX)
+
+bad_cast::bad_cast() _GABIXX_NOEXCEPT {
+}
+
+bad_cast::~bad_cast() _GABIXX_NOEXCEPT {
+}
+
+const char* bad_cast::what() const _GABIXX_NOEXCEPT {
+  return "std::bad_cast";
+}
+
+bad_typeid::bad_typeid() _GABIXX_NOEXCEPT {
+}
+
+bad_typeid::~bad_typeid() _GABIXX_NOEXCEPT {
+}
+
+const char* bad_typeid::what() const _GABIXX_NOEXCEPT {
+  return "std::bad_typeid";
+}
+
+bool uncaught_exception() _GABIXX_NOEXCEPT {
+  using namespace __cxxabiv1;
+
+  __cxa_eh_globals* globals = __cxa_get_globals();
+  return globals->uncaughtExceptions != 0;
+}
+
+}  // namespace std
