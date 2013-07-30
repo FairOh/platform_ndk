@@ -199,6 +199,69 @@ dump "Copying prebuilt binaries..."
 # Now copy the GCC toolchain prebuilt binaries
 run copy_directory "$TOOLCHAIN_PATH" "$TMPDIR"
 
+
+# Replace soft-link mcld by real file
+ALL_LDS=`find $TMPDIR -name "*mcld"`
+for LD in $ALL_LDS; do
+  rm -f "$LD"
+  cp -a "$NDK_DIR/toolchains/llvm-$DEFAULT_LLVM_VERSION/prebuilt/$SYSTEM/bin/ld.mcld" "$LD"
+done
+
+# Copy python-related to for gdb.exe
+PYTHON=python
+PYTHON_x=python$(echo "$DEFAULT_PYTHON_VERSION" | cut -d . -f 1)
+PYTHON_xdotx=python$(echo "$DEFAULT_PYTHON_VERSION" | cut -d . -f 1).$(echo "$DEFAULT_PYTHON_VERSION" | cut -d . -f 2)
+copy_directory "$NDK_DIR/prebuilt/$SYSTEM/include/$PYTHON_xdotx" "$TMPDIR/include/$PYTHON_xdotx"
+copy_directory "$NDK_DIR/prebuilt/$SYSTEM/lib/$PYTHON_xdotx" "$TMPDIR/lib/$PYTHON_xdotx"
+copy_file_list "$NDK_DIR/prebuilt/$SYSTEM/bin" "$TMPDIR/bin" "$PYTHON$HOST_EXE" "$PYTHON_x$HOST_EXE" "$PYTHON_xdotx$HOST_EXE"
+if [ "$HOST_TAG32" = "windows" ]; then
+  copy_file_list "$NDK_DIR/prebuilt/$SYSTEM/bin" "$TMPDIR/bin" lib$PYTHON_xdotx.dll
+fi
+
+dump_extra_compile_commands () {
+  if [ "$ARCH_INC" = "$ARCH" ]; then
+    return
+  fi
+
+  if [ -z "$HOST_EXE" ]; then
+    echo '# Call bc2native if needed'
+    echo ''
+    echo 'if [ -n "`echo $@ | grep '\'\\ \\-c\''`" ] || [ "$1" = "-c" ]; then'
+    echo '  exit'
+    echo 'fi'
+
+    echo 'while [ -n "$1" ]; do'
+    echo '  if [ "$1" = "-o" ]; then'
+    echo '    output="$2"'
+    echo '    break'
+    echo '  fi'
+    echo '  shift'
+    echo 'done'
+    echo 'test -z "$output" && output=a.out'
+    echo '`dirname $0`/python `dirname $0`/ndk-bc2native.py --sysroot=`dirname $0`/../sysroot --abi='$TARGET_ABI' --platform='$PLATFORM' --file $output $output'
+  else
+    echo 'rem Call bc2native if needed'
+    echo ''
+    echo '  if not "%1" == "-c" goto :keep_going'
+    echo '  echo %* | grep "\\ \\-c"'
+    echo '  if ERRORLEVEL 1 goto :keep_going'
+    echo '  exit'
+    echo ':keep_going'
+
+    echo ':keep_find_output'
+    echo '  if not "%1" == "-o" goto :check_next'
+    echo '  set output=%2'
+    echo ':check_next'
+    echo '  shift'
+    echo '  if "%1" == "" goto :keep_find_output'
+    echo '  if not "%output%" == "" goto :check_done'
+    echo '  set output=a.out'
+    echo ':check_done'
+    echo '%~dp0\\python'$HOST_EXE' %~dp0\\ndk-bc2native.py --sysroot=%~dp0\\..\\sysroot --abi='$TARGET_ABI' --platform='$PLATFORM' --file %output% %output%'
+  fi
+}
+
+
 if [ -n "$LLVM_VERSION" ]; then
   # Copy the clang/llvm toolchain prebuilt binaries
   run copy_directory "$LLVM_TOOLCHAIN_PATH" "$TMPDIR"
