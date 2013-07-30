@@ -1593,6 +1593,20 @@ install_gcc ()
         fail_panic
     done
 
+    # Also relink a few files under $INSTALL_DIR/bin/
+    do_relink "$INSTALL_DIR"/bin/$TARGET-c++ $TARGET-g++ &&
+    do_relink "$INSTALL_DIR"/bin/$TARGET-gcc-$GCC_VERSION $TARGET-gcc &&
+    if [ -f "$INSTALL_DIR"/bin/$TARGET-ld.gold ]; then
+      do_relink "$INSTALL_DIR"/bin/$TARGET-ld $TARGET-ld.gold
+    else
+      do_relink "$INSTALL_DIR"/bin/$TARGET-ld $TARGET-ld.bfd
+    fi
+    fail_panic
+
+    # Remove unwanted $TARGET-run simulator to save about 800 KB.
+    run2 rm -f "$INSTALL_DIR"/bin/$TARGET-run
+
+
     # Copy the license files
     local TOOLCHAIN_LICENSES="$ANDROID_NDK_ROOT"/build/tools/toolchain-licenses
     run cp -f "$TOOLCHAIN_LICENSES"/COPYING "$TOOLCHAIN_LICENSES"/COPYING.LIB "$INSTALL_DIR"
