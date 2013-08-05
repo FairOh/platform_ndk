@@ -444,8 +444,9 @@ builder_end ()
 # Same as builder_begin, but to target Android with a specific ABI
 # $1: ABI name (e.g. armeabi)
 # $2: Build directory
-# $3: Optional llvm version
-# $4: Optional Makefile name
+# $3: Gcc version
+# $4: Optional llvm version
+# $5: Optional Makefile name
 builder_begin_android ()
 {
     local ABI BUILDDIR LLVM_VERSION MAKEFILE
@@ -459,8 +460,9 @@ builder_begin_android ()
     fi
     ABI=$1
     BUILDDIR=$2
-    LLVM_VERSION=$3
-    MAKEFILE=$4
+    GCC_VERSION=$3
+    LLVM_VERSION=$4
+    MAKEFILE=$5
     ARCH=$(convert_abi_to_arch $ABI)
     UNKNOWN_ARCH=$(find_ndk_unknown_archs | grep $ARCH)
     PLATFORM=${2##android-}
@@ -471,10 +473,10 @@ builder_begin_android ()
     fi
 
     if [ -z "$LLVM_VERSION" ]; then
-        BINPREFIX=$NDK_DIR/$(get_default_toolchain_binprefix_for_arch $ARCH)
+        BINPREFIX=$NDK_DIR/$(get_toolchain_binprefix_for_arch $ARCH $GCC_VERSION)
     else
         BINPREFIX=$NDK_DIR/$(get_llvm_toolchain_binprefix $LLVM_VERSION)
-        GCC_TOOLCHAIN=`dirname $NDK_DIR/$(get_default_toolchain_binprefix_for_arch $ARCH)`
+        GCC_TOOLCHAIN=`dirname $NDK_DIR/$(get_toolchain_binprefix_for_arch $ARCH $GCC_VERSION)`
         GCC_TOOLCHAIN=`dirname $GCC_TOOLCHAIN`
     fi
 
