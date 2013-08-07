@@ -79,6 +79,7 @@ if [ -z "$ARCH" ]; then
             ARCH=arm
             ;;
     esac
+    ARCH_INC=$ARCH
     log "Auto-config: --arch=$ARCH"
 fi
 
@@ -276,18 +277,21 @@ if [ -n "$LLVM_VERSION" ]; then
       arm) # NOte: -target may change by clang based on the
            #        presence of subsequent -march=armv7-a and/or -mthumb
           LLVM_TARGET=armv5te-none-linux-androideabi
+          TOOLCHAIN_PREFIX=$DEFAULT_ARCH_TOOLCHAIN_PREFIX_arm
           ;;
       x86)
           LLVM_TARGET=i686-none-linux-android
+          TOOLCHAIN_PREFIX=$DEFAULT_ARCH_TOOLCHAIN_PREFIX_x86
           ;;
       mips)
           LLVM_TARGET=mipsel-none-linux-android
+          TOOLCHAIN_PREFIX=$DEFAULT_ARCH_TOOLCHAIN_PREFIX_mips
           ;;
       *)
         dump "ERROR: Unsupported NDK architecture!"
   esac
   # Need to remove '.' from LLVM_VERSION when constructing new clang name,
-  # otherwise clang3.1++ may still compile *.c code as C, not C++, which
+  # otherwise clang3.3++ may still compile *.c code as C, not C++, which
   # is not consistent with g++
   LLVM_VERSION_WITHOUT_DOT=$(echo "$LLVM_VERSION" | sed -e "s!\.!!")
   mv "$TMPDIR/bin/clang${HOST_EXE}" "$TMPDIR/bin/clang${LLVM_VERSION_WITHOUT_DOT}${HOST_EXE}"
@@ -316,6 +320,8 @@ else
 fi
 EOF
   chmod 0755 "$TMPDIR/bin/clang" "$TMPDIR/bin/clang++"
+  cp -a "$TMPDIR/bin/clang" "$TMPDIR/bin/$TOOLCHAIN_PREFIX-clang"
+  cp -a "$TMPDIR/bin/clang++" "$TMPDIR/bin/$TOOLCHAIN_PREFIX-clang++"
 
   if [ -n "$HOST_EXE" ] ; then
     cat > "$TMPDIR/bin/clang.cmd" <<EOF
@@ -342,6 +348,8 @@ rem target/triple already spelled out.
 if ERRORLEVEL 1 exit /b 1
 :done
 EOF
+    cp -a "$TMPDIR/bin/clang.cmd" "$TMPDIR/bin/$TOOLCHAIN_PREFIX-clang.cmd"
+    cp -a "$TMPDIR/bin/clang++.cmd" "$TMPDIR/bin/$TOOLCHAIN_PREFIX-clang++.cmd"
   fi
 fi
 
@@ -357,6 +365,60 @@ GNUSTL_LIBS=$GNUSTL_DIR/libs
 
 ABI_STL="$TMPDIR/$ABI_CONFIGURE_TARGET"
 ABI_STL_INCLUDE="$TMPDIR/include/c++/$GCC_BASE_VERSION"
+ABI_STL_INCLUDE_TARGET="$ABI_STL_INCLUDE/$ABI_CONFIGURE_TARGET"
+
+# $1: filenames of headers
+copy_gabixx_headers () {
+  for header in $@; do
+    (cd $ABI_STL_INCLUDE && ln -s ../../gabi++/include/$header $header)
+  done
+}
+
+# Copy common STL headers (i.e. the non-arch-specific ones)
+copy_stl_common_headers () {
+    case $STL in
+        gnustl)
+            copy_directory "$GNUSTL_DIR/include" "$ABI_STL_INCLUDE"
+            ;;
+        stlport)
+            copy_directory "$STLPORT_DIR/stlport" "$ABI_STL_INCLUDE"
+            copy_directory "$STLPORT_DIR/../gabi++/include" "$ABI_STL_INCLUDE/../../gabi++/include"
+            copy_gabixx_headers cxxabi.h unwind.h unwind-arm.h unwind-itanium.h
+            ;;
+    esac
+}
+
+# $1: Source ABI (e.g. 'armeabi')
+# $2: Optional extra ABI variant, or empty (e.g. "", "thumb", "armv7-a/thumb")
+copy_stl_libs () {
+    local ABI=$1
+    local ABI2=$2
+    case $STL in
+        gnustl)
+            copy_directory "$GNUSTL_LIBS/$ABI/include/bits" "$ABI_STL_INCLUDE_TARGET/$ABI2/bits"
+            copy_file_list "$GNUSTL_LIBS/$ABI" "$ABI_STL/lib/$ABI2" "libgnustl_shared.so"
+            copy_file_list "$GNUSTL_LIBS/$ABI" "$ABI_STL/lib/$ABI2" "libsupc++.a"
+            cp -p "$GNUSTL_LIBS/$ABI/libgnustl_static.a" "$ABI_STL/lib/$ABI2/libstdc++.a"
+            ;;
+        stlport)
+            if [ "$ARCH_INC" != "$ARCH" ]; then
+              tmp_lib_dir=$TMPDIR/stl
+              $NDK_DIR/build/tools/build-cxx-stl.sh --stl=stlport --out-dir=$tmp_lib_dir --abis=unknown
+              cp -p "`ls $tmp_lib_dir/sources/cxx-stl/stlport/libs/*/libstlport_static.a`" "$ABI_STL/lib/$ABI2/libstdc++.a"
+              cp -p "`ls $tmp_lib_dir/sources/cxx-stl/stlport/libs/*/libstlport_shared.so`" "$ABI_STL/lib/$ABI2/libstlport_shared.so"
+              rm -rf $tmp_lib_dir
+            else
+              copy_file_list "$STLPORT_LIBS/$ABI" "$ABI_STL/lib/$ABI2" "libstlport_shared.so"
+              cp -p "$STLPORT_LIBS/$ABI/libstlport_static.a" "$ABI_STL/lib/$ABI2/libstdc++.a"
+            fi
+            ;;
+        *)
+            dump "ERROR: Unsupported STL: $STL"
+            exit 1
+            ;;
+    esac
+}
+
 
 copy_directory "$GNUSTL_DIR/include" "$ABI_STL_INCLUDE"
 ABI_STL_INCLUDE_TARGET="$ABI_STL_INCLUDE/$ABI_CONFIGURE_TARGET"
