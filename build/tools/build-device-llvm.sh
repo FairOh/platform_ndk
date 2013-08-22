@@ -153,7 +153,7 @@ for abi in $ABIS; do
   if [ -n "$OPTION_GCC_VERSION" ]; then
     toolchain_name="${toolchain_name//${DEFAULT_GCC_VERSION}/${OPTION_GCC_VERSION}}"
   fi
-  CFLAGS="-fomit-frame-pointer -fstrict-aliasing -ffunction-sections -fdata-sections -DNDEBUG"
+  CFLAGS="-fomit-frame-pointer -fstrict-aliasing -ffunction-sections -fdata-sections"
   case $abi in
     armeabi)
       # No -mthumb, because ./llvm/lib/Target/ARM/ARMJITInfo.cpp now contain inline assembly
