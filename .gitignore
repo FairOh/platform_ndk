@@ -9,3 +9,4 @@ platforms/
 toolchains/*/prebuilt/
 /ndk-stack*
 prebuilt/
+tests/abcc/prebuilts/
