@@ -27,15 +27,8 @@
 
 #include <cstddef>
 #include <new>
-#include <cxxabi.h>
 
-#include "helper_func_internal.h"
-#include <cxxabi.h>
-
-#include "helper_func_internal.h"
-#include <cxxabi.h>
-
-#include "helper_func_internal.h"
+#include "cxxabi_defines.h"
 
 
 using std::size_t;
@@ -100,10 +93,7 @@ private:
   destructor_func destructor_;
 };
 
-// Helper class that calls fatalError() with a given message if
-// Helper class that calls fatalError() with a given message if
-// Helper class that calls fatalError() with a given message if
->>>>>>> 961738e... gabi++: Implement missing array helper functions.
+// Helper class that calls __fatal_error() with a given message if
 // it exits a scope without a previous call to release().
 class scoped_catcher {
 public:
@@ -111,9 +101,7 @@ public:
 
   ~scoped_catcher() {
     if (message_)
-      __cxxabiv1::fatalError(message_);
-      __cxxabiv1::fatalError(message_);
-      __cxxabiv1::fatalError(message_);
+      __gabixx::__fatal_error(message_);
 
   }
 
