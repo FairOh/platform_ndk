@@ -193,6 +193,87 @@ namespace __cxxabiv1
                     __cxa_vec_copy_constructor constructor,
                     __cxa_vec_destructor destructor );
 
+    // The ARM ABI mandates that constructors and destructors
+    // must return 'this', i.e. their first parameter. This is
+    // also true for __cxa_vec_ctor and __cxa_vec_cctor.
+#ifdef __arm__
+    typedef void* __cxa_vec_ctor_return_type;
+#else
+    typedef void __cxa_vec_ctor_return_type;
+#endif
+
+    typedef __cxa_vec_ctor_return_type
+        (*__cxa_vec_constructor)(void *);
+
+    typedef __cxa_vec_constructor __cxa_vec_destructor;
+
+    typedef __cxa_vec_ctor_return_type
+        (*__cxa_vec_copy_constructor)(void*, void*);
+
+    void* __cxa_vec_new(size_t element_count,
+                        size_t element_size,
+                        size_t padding_size,
+                        __cxa_vec_constructor constructor,
+                        __cxa_vec_destructor destructor);
+
+    void* __cxa_vec_new2(size_t element_count,
+                         size_t element_size,
+                         size_t padding_size,
+                         __cxa_vec_constructor constructor,
+                         __cxa_vec_destructor destructor,
+                         void* (*alloc)(size_t),
+                         void  (*dealloc)(void*));
+
+    void* __cxa_vec_new3(size_t element_count,
+                         size_t element_size,
+                         size_t padding_size,
+                         __cxa_vec_constructor constructor,
+                         __cxa_vec_destructor destructor,
+                         void* (*alloc)(size_t),
+                         void  (*dealloc)(void*, size_t));
+
+    __cxa_vec_ctor_return_type
+    __cxa_vec_ctor(void*  array_address,
+                   size_t element_count,
+                   size_t element_size,
+                   __cxa_vec_constructor constructor,
+                   __cxa_vec_destructor destructor);
+
+    void __cxa_vec_dtor(void*  array_address,
+                        size_t element_count,
+                        size_t element_size,
+                        __cxa_vec_destructor destructor);
+
+    void __cxa_vec_cleanup(void* array_address,
+                           size_t element_count,
+                           size_t element_size,
+                           __cxa_vec_destructor destructor);
+
+    void __cxa_vec_delete(void*  array_address,
+                          size_t element_size,
+                          size_t padding_size,
+                          __cxa_vec_destructor destructor);
+
+    void __cxa_vec_delete2(void* array_address,
+                           size_t element_size,
+                           size_t padding_size,
+                           __cxa_vec_destructor destructor,
+                           void  (*dealloc)(void*));
+
+    void __cxa_vec_delete3(void* array_address,
+                           size_t element_size,
+                           size_t padding_size,
+                           __cxa_vec_destructor destructor,
+                           void  (*dealloc) (void*, size_t));
+
+    __cxa_vec_ctor_return_type
+    __cxa_vec_cctor(void*  dest_array,
+                    void*  src_array,
+                    size_t element_count,
+                    size_t element_size,
+                    __cxa_vec_copy_constructor constructor,
+                    __cxa_vec_destructor destructor );
+>>>>>>> parent of b3f9e45... gabi++: Implement missing array helper functions.
 
   } // extern "C"
 

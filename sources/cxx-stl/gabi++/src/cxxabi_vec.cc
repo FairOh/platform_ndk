@@ -27,11 +27,12 @@
 
 #include <cstddef>
 #include <new>
-
-#include "cxxabi_defines.h"
+#include <cxxabi.h>
 
 #include "helper_func_internal.h"
+#include <cxxabi.h>
 
+#include "helper_func_internal.h"
 
 using std::size_t;
 
@@ -96,7 +97,7 @@ private:
 };
 
 // Helper class that calls fatalError() with a given message if
-
+// Helper class that calls fatalError() with a given message if
 // it exits a scope without a previous call to release().
 class scoped_catcher {
 public:
