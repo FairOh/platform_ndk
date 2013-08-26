@@ -424,6 +424,12 @@ if [ -z "$PREBUILT_NDK" ]; then
             unpack_prebuilt libcxx-libs-$ABI "$REFERENCE"
         fi
     done
+    for ABI in $UNKNOWN_ABIS; do
+        unpack_prebuilt stlport-libs-$ABI "$REFERENCE"
+        if [ "$WITH_LIBCXX" ]; then
+            unpack_prebuilt libcxx-libs-$ABI "$REFERENCE"
+        fi
+    done
 fi
 
 # create a release file named 'RELEASE.TXT' containing the release
