@@ -82,6 +82,9 @@ if [ -z "$ARCH" ]; then
     ARCH_INC=$ARCH
     log "Auto-config: --arch=$ARCH"
 fi
+test -z "`echo $ARCH_INC | grep $ARCH`" && NO_BC2NATIVE=yes
+test "$ARCH_INC" != "$ARCH" && ARCH_INC=$(find_ndk_unknown_archs)
+test -z "$ARCH_INC" && ARCH_INC="$ARCH"
 
 # Check toolchain name
 if [ -z "$TOOLCHAIN_NAME" ]; then
@@ -100,7 +103,7 @@ if [ -z "$LLVM_VERSION" ]; then
 fi
 
 # Check PLATFORM
-if [ -z "$PLATFORM" ]; then
+if [ -z "$PLATFORM" -a "$ARCH_INC" = "$ARCH" ] ; then
     case $ARCH in
         arm) PLATFORM=android-3
             ;;
@@ -112,6 +115,9 @@ if [ -z "$PLATFORM" ]; then
             PLATFORM=android-9
             ;;
     esac
+    log "Auto-config: --platform=$PLATFORM"
+elif [ -z "$PLATFORM" ] ; then
+    PLATFORM=android-9
     log "Auto-config: --platform=$PLATFORM"
 fi
 
@@ -143,8 +149,10 @@ if [ $? != 0 ] ; then
 fi
 
 # Compute source sysroot
-SRC_SYSROOT="$NDK_DIR/platforms/$PLATFORM/arch-$ARCH"
-if [ ! -d "$SRC_SYSROOT" ] ; then
+SRC_SYSROOT_INC="$NDK_DIR/platforms/$PLATFORM/arch-$ARCH_INC/usr/include"
+SRC_SYSROOT_LIB="$NDK_DIR/platforms/$PLATFORM/arch-$ARCH/usr/lib"
+test "$NO_BC2NATIVE" = "yes" && SRC_SYSROOT_LIB="$NDK_DIR/platforms/$PLATFORM/arch-$ARCH_INC/usr/lib"
+if [ ! -d "$SRC_SYSROOT_INC" -o ! -d "$SRC_SYSROOT_LIB" ] ; then
     echo "No platform files ($PLATFORM) for this architecture: $ARCH"
     exit 1
 fi
@@ -220,7 +228,7 @@ if [ "$HOST_TAG32" = "windows" ]; then
 fi
 
 dump_extra_compile_commands () {
-  if [ "$ARCH_INC" = "$ARCH" ]; then
+  if [ "$NO_BC2NATIVE" = "yes" ]; then
     return
   fi
 
