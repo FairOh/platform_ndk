@@ -129,31 +129,8 @@ else
 fi
 
 
-ARCHS="arm x86 mips"
-for ARCH in $ARCHS
-do
-    # Set the Arch specific variables
-    case "$ARCH" in
-    arm )
-        PRODUCT=generic
-
-        unset MPFR_VERSION
-        unset GDB_VERSION
-        unset BINUTILS_VERSION
-        ;;
-    x86|mips )
-        PRODUCT=generic_$ARCH
-        ;;
-    esac
-
-
-    # Ensure we have a Product output for the NDK build
-    export ANDROID_PRODUCT_OUT=$TOP/out/target/product/$PRODUCT
-    if [ ! -d $ANDROID_PRODUCT_OUT ]; then
-        echo >&2 Rebuild for $PRODUCT first... or change PRODUCT in $0.
-        exit 1
-    fi
-done # with ARCH
+ARCHS=$(find_ndk_unknown_archs)
+ARCHS="$DEFAULT_ARCHS $ARCHS"
 
 # Build the platform
 echo
