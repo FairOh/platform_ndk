@@ -418,6 +418,10 @@ if [ "$ARCH_LIB" != "$ARCH" ]; then
     cp -a $NDK_DIR/platforms/$PLATFORM/arch-$ARCH/usr/lib/crt* $TMPDIR/sysroot/usr/lib
 fi
 
+if [ "$ARCH_LIB" != "$ARCH" ]; then
+    cp -a $NDK_DIR/platforms/$PLATFORM/arch-$ARCH/usr/lib/crt* $TMPDIR/sysroot/usr/lib
+fi
+
 dump "Copying libstdc++ headers and libraries..."
 
 GNUSTL_DIR=$NDK_DIR/$GNUSTL_SUBDIR/$GCC_VERSION
