@@ -393,6 +393,14 @@ if [ "$WINE" ]; then
     fail_panic "Can't locate $WINE"
 fi
 
+# $1: output bitcode path
+gen_empty_bitcode() {
+    TEMP_FILE=`mktemp`
+    mv $TEMP_FILE ${TEMP_FILE}.c
+    run $(get_llvm_toolchain_binprefix $DEFAULT_LLVM_VERSION)/clang -target le32-none-ndk -emit-llvm -c -o $1 ${TEMP_FILE}.c
+    rm -f ${TEMP_FILE}.c
+}
+
 case $ABI in
     default)  # Let the APP_ABI in jni/Application.mk decide what to build
         ;;
@@ -402,20 +410,20 @@ case $ABI in
     *)
         if [ -n "$(filter_out "$PREBUILT_ABIS" "$ABI")" ] && [ -n "$(find_ndk_unknown_archs)" ]; then
             ABI=$(find_ndk_unknown_archs)
+            NDK_BUILD_FLAGS="$NDK_BUILD_FLAGS APP_ABI=$ABI"
 
-            # Filter out those using gnustl or gabi++ only
-            TESTS="`find $PROGDIR | xargs grep 'import-module.*cxx-stl/gnu-libstdc++' | grep -v 'run-tests' | awk -F '/' '{print $9}' | xargs`"
-            UNKNOWN_INCOMPATIBLE_TESTS="$UNKNOWN_INCOMPATIBLE_TESTS $TESTS"
-            TESTS="`find $PROGDIR | xargs grep 'import-module.*cxx-stl/gabi++' | grep -v 'run-tests' | awk -F '/' '{print $9}' | xargs`"
-            UNKNOWN_INCOMPATIBLE_TESTS="$UNKNOWN_INCOMPATIBLE_TESTS $TESTS"
-            TESTS="`find $PROGDIR | xargs grep 'APP_STL.*gnustl' | grep -v 'run-tests' | awk -F '/' '{print $9}' | xargs`"
-            UNKNOWN_INCOMPATIBLE_TESTS="$UNKNOWN_INCOMPATIBLE_TESTS $TESTS"
-            UNKNOWN_INCOMPATIBLE_TESTS="$UNKNOWN_INCOMPATIBLE_TESTS test-gabi++"  # Real Android.mk not under tests/ so we miss it
-
-            UNKNOWN_INCOMPATIBLE_TESTS="`echo $UNKNOWN_INCOMPATIBLE_TESTS $TESTS | tr ' ' '\n' | sort -u | tr '\n' ' '`"
-            echo "UNKNOWN_INCOMPATIBLE_TESTS: $UNKNOWN_INCOMPATIBLE_TESTS"
-
-            NDK_BUILD_FLAGS="$NDK_BUILD_FLAGS APP_ABI=$ABI APP_STL=stlport_static"
+            # Create those temporarily files to make testing happy
+            GCC_TOOLCHAIN_VERSION=`cat $NDK/toolchains/llvm-$DEFAULT_LLVM_VERSION/setup.mk | grep '^TOOLCHAIN_VERSION' | awk '{print $3'}`
+            run mkdir -p $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$ABI
+            run mkdir -p $NDK/$GABIXX_SUBDIR/libs/$ABI
+            run mkdir -p $NDK/$LIBPORTABLE_SUBDIR/libs/$ABI
+            run gen_empty_bitcode $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$ABI/libsupc++.a
+            run gen_empty_bitcode $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$ABI/libgnustl_static.a
+            run gen_empty_bitcode $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$ABI/libgnustl_shared.bc
+            run gen_empty_bitcode $NDK/$GABIXX_SUBDIR/libs/$ABI/libgabi++_static.a
+            run gen_empty_bitcode $NDK/$GABIXX_SUBDIR/libs/$ABI/libgabi++_shared.bc
+            run cp -a $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$(get_default_abi_for_arch arm)/include $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$ABI
+            run cp -a $NDK/$LIBPORTABLE_SUBDIR/libs/$(get_default_abi_for_arch arm)/libportable.a $NDK/$LIBPORTABLE_SUBDIR/libs/$ABI
         else
             echo "ERROR: Unsupported abi value: $ABI"
             exit 1
@@ -511,14 +519,8 @@ is_broken_build ()
 is_incompatible_abi ()
 {
     local PROJECT="$1"
-    if [ "$ABI" = "$(find_ndk_unknown_archs)" ]; then
-        # Basically accept all, except for something we precluded
-        local PROJECT_NAME=`basename $PROJECT`
-        test -n "`echo $UNKNOWN_INCOMPATIBLE_TESTS | grep $PROJECT_NAME`" && return 0
-        return 1
-    fi
-
-    if [ "$ABI" != "default" ] ; then
+    # Basically accept all for unknown arch, even some cases may not be suitable for this way
+    if [ "$ABI" != "default" -a "$ABI" != "$(find_ndk_unknown_archs)" ] ; then
         # check APP_ABI
         local APP_ABIS=`get_build_var $PROJECT APP_ABI`
         APP_ABIS=$APP_ABIS" "
@@ -537,7 +539,7 @@ is_incompatible_abi ()
     return 1
 }
 
-device_compile()
+compile_on_the_fly()
 {
     local DSTDIR="$1"
     local COMPILER_PKGNAME="compiler.abcc"
@@ -784,10 +786,10 @@ if is_testable device; then
             adb_shell_mkdir "$DEVICE" $DSTDIR/abcc_tmp
             run $ADB_CMD -s "$DEVICE" shell chmod 0777 $DSTDIR/abcc_tmp
             for SRCFILE in `ls $SRCDIR`; do
-              run $ADB_CMD -s "$DEVICE" push "$SRCDIR/$SRCFILE" $DSTDIR/abcc_tmp
-              run $ADB_CMD -s "$DEVICE" shell chmod 0644 $DSTDIR/abcc_tmp/$SRCFILE
+                run $ADB_CMD -s "$DEVICE" push "$SRCDIR/$SRCFILE" $DSTDIR/abcc_tmp
+                run $ADB_CMD -s "$DEVICE" shell chmod 0644 $DSTDIR/abcc_tmp/$SRCFILE
             done
-            device_compile $DSTDIR/abcc_tmp
+            compile_on_the_fly $DSTDIR/abcc_tmp
             if [ $? -ne 0 ]; then
                 test "$CONTINUE_ON_BUILD_FAIL" != "yes" && exit 1
                 return 1
@@ -796,6 +798,7 @@ if is_testable device; then
             run $ADB_CMD -s "$DEVICE" pull $DSTDIR/abcc_tmp $SRCDIR
             run rm -f $SRCDIR/compile_result
             run rm -f $SRCDIR/compile_error
+            run rm -f $SRCDIR/*$(get_lib_suffix_for_abi $ABI)
             run $ADB_CMD -s "$DEVICE" shell rm -rf $DSTDIR/abcc_tmp
         fi
 
@@ -937,5 +940,11 @@ if is_testable device; then
 fi
 
 dump "Cleaning up..."
+if [ "$ABI" = "$(find_ndk_unknown_archs)" ]; then
+  # Cleanup some intermediate files for testing
+  run rm -rf $NDK/$GNUSTL_SUBDIR/$GCC_TOOLCHAIN_VERSION/libs/$ABI
+  run rm -rf $NDK/$GABIXX_SUBDIR/libs/$ABI
+  run rm -rf $NDK/$LIBPORTABLE_SUBDIR/libs/$ABI
+fi
 rm -rf $BUILD_DIR
 dump "Done."
