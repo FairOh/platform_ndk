@@ -82,15 +82,20 @@ endif
 
 # SPECIAL CASES:
 # 1) android-6 and android-7 are the same thing as android-5
-# 2) android-10 .. 13 is the same thing as android-9
+# 2) android-10, 11, and 12 are the same thing as android-9
+# 3) android-18 and up are the same thing as android-18
 #
 APP_PLATFORM_LEVEL := $(strip $(subst android-,,$(APP_PLATFORM)))
 ifneq (,$(filter 6 7,$(APP_PLATFORM_LEVEL)))
     APP_PLATFORM := android-5
     $(call ndk_log,  Adjusting APP_PLATFORM android-$(APP_PLATFORM_LEVEL) to $(APP_PLATFORM))
 endif
-ifneq (,$(filter 10 11 12 13,$(APP_PLATFORM_LEVEL)))
+ifneq (,$(filter 10 11 12,$(APP_PLATFORM_LEVEL)))
     APP_PLATFORM := android-9
+    $(call ndk_log,  Adjusting APP_PLATFORM android-$(APP_PLATFORM_LEVEL) to $(APP_PLATFORM))
+endif
+ifneq (,$(call gt,$(APP_PLATFORM_LEVEL),18))
+    APP_PLATFORM := android-18
     $(call ndk_log,  Adjusting APP_PLATFORM android-$(APP_PLATFORM_LEVEL) to $(APP_PLATFORM))
 endif
 
