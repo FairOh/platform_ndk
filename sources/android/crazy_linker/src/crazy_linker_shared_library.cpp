@@ -132,7 +132,6 @@ class SharedLibraryResolver : public ElfRelocations::SymbolResolver {
 };
 
 }  // namespace
-
 SharedLibrary::SharedLibrary() { ::memset(this, 0, sizeof(*this)); }
 
 SharedLibrary::~SharedLibrary() {
@@ -152,6 +151,7 @@ bool SharedLibrary::Load(const char* full_path,
   if (full_path_len >= sizeof(full_path_)) {
     error->Format("Path too long: %s", full_path);
     return false;
+  }
 
   strlcpy(full_path_, full_path, sizeof(full_path_));
   base_name_ = GetBaseNamePtr(full_path_);
