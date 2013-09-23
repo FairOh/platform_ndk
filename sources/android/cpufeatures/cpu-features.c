@@ -57,9 +57,6 @@
  * NDK r4: Initial release
  */
 #include <sys/system_properties.h>
-#ifdef __arm__
-#include <machine/cpu-features.h>
-#endif
 #include <pthread.h>
 #include "cpu-features.h"
 #include <stdio.h>
@@ -525,11 +522,11 @@ get_cpu_count(void)
 static void
 android_cpuInitFamily(void)
 {
-#if defined(__ARM_ARCH__)
+#if defined(__arm__)
     g_cpuFamily = ANDROID_CPU_FAMILY_ARM;
 #elif defined(__i386__)
     g_cpuFamily = ANDROID_CPU_FAMILY_X86;
-#elif defined(_MIPS_ARCH)
+#elif defined(__mips__)
     g_cpuFamily = ANDROID_CPU_FAMILY_MIPS;
 #else
     g_cpuFamily = ANDROID_CPU_FAMILY_UNKNOWN;
@@ -575,7 +572,7 @@ android_cpuInit(void)
 
     D("found cpuCount = %d\n", g_cpuCount);
 
-#ifdef __ARM_ARCH__
+#ifdef __arm__
     {
         char*  features = NULL;
         char*  architecture = NULL;
@@ -709,7 +706,7 @@ android_cpuInit(void)
                 g_cpuFeatures |= ANDROID_CPU_ARM_FEATURE_iWMMXt;
         }
     }
-#endif /* __ARM_ARCH__ */
+#endif /* __arm__ */
 
 #ifdef __i386__
     int regs[4];
